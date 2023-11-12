@@ -366,7 +366,7 @@ void addBook()
     PI_ISBN_List.push_back(pi_isbn);
     PI_ISBN_List.sort();
     addHeader(books_file, bh);
-    addHeader(pi_author_id_file, pi_isbn_h);
+    addHeader(pi_isbn_file, pi_isbn_h);
     writeFile(books_file, bookList, bh);
     writeFile(pi_isbn_file, PI_ISBN_List, pi_isbn_h);
     bookList.clear();
@@ -406,6 +406,10 @@ int main()
     PI_ISBN_Header pi_isbn_h(0);
     addHeader(books_file, h);
     addHeader(pi_isbn_file, pi_isbn_h);
+    PI_ISBN pi((char *)"1234",1);
+
+    pi_isbn_file.seekp(sizeof(pi_isbn_h),ios::beg);
+    pi_isbn_file.write((char *)&pi,sizeof(pi));
 
     addBook();
     
