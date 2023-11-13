@@ -370,12 +370,21 @@ bool isISBNExist(list<PI_ISBN> list, string isbn)
 }
 
 template <class T1, class T2>
-void writeAtFile(fstream &file, T1& record, T2 &header , int position)
+void writeRecordAtFile(fstream &file, T1& record, T2 &header , int position)
 {
     file.seekg(0, ios::beg);
     file.read((char *)&header, sizeof(header));
     file.seekp(sizeof(header) + (position * sizeof(record)), ios::beg);
     file.write((char *)&record, sizeof(record));
+}
+
+template <class T1, class T2>
+void getRecordfromFile(fstream &file, T1& record, T2 &header , int position)
+{
+    file.seekg(0, ios::beg);
+    file.read((char *)&header, sizeof(header));
+    file.seekd(sizeof(header) + (position * sizeof(record)), ios::beg);
+    file.read((char *)&record, sizeof(record));
 }
 
 
@@ -421,12 +430,38 @@ void addBook()
         addHeader(pi_isbn_file, pi_isbn_h);
         addHeader(si_author_id_file,si_author_id_h);
 
-        writeAtFile(books_file,book,book_h,end);
+        writeRecordAtFile(books_file,book,book_h,end);
         writeFile(pi_isbn_file,PI_ISBN_List,pi_isbn_h);
         writeFile(si_author_id_file,SI_Author_ID_List,si_author_id_h);
 
     }
     else{
+
+        int removed_position = book_h.RNN ;
+        Book removed_book ;
+        getRecordfromFile(books_file,removed_book,book_h,removed_position);
+        string rnn = removed_book.isbn ;
+        rnn.erase(0,1);
+        book_h.RNN = stoi(rnn) ; 
+
+        PI_ISBN pi_isbn(isbn, removed_position);
+        SI_Author_ID si_author_id(auther_id,removed_position);
+        book_h.no_of_records++;
+        pi_isbn_h.no_of_records++;
+        si_author_id_h.no_of_records++;
+
+        PI_ISBN_List.push_back(pi_isbn);
+        SI_Author_ID_List.push_back(si_author_id);
+        PI_ISBN_List.sort();
+        SI_Author_ID_List.sort();
+
+        addHeader(books_file, book_h);
+        addHeader(pi_isbn_file, pi_isbn_h);
+        addHeader(si_author_id_file,si_author_id_h);
+
+        writeRecordAtFile(books_file,book,book_h,removed_position);
+        writeFile(pi_isbn_file,PI_ISBN_List,pi_isbn_h);
+        writeFile(si_author_id_file,SI_Author_ID_List,si_author_id_h);
 
     }
     
@@ -457,7 +492,6 @@ int main()
     addHeader(pi_isbn_file, pi_isbn_h);
     addHeader(si_author_id_file,si_author_id_h);
     
-
 
     addBook();
     
