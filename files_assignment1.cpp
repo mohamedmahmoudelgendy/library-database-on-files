@@ -5,30 +5,30 @@
 
 using namespace std;
 
-struct PI_Auther_ID_Header
+struct PI_Author_ID_Header
 {
     int no_of_records;
 
-    PI_Auther_ID_Header()
+    PI_Author_ID_Header()
     {
     }
 
-    PI_Auther_ID_Header(int no)
+    PI_Author_ID_Header(int no)
     {
         no_of_records = no;
     }
 };
 
-struct PI_Auther_ID
+struct PI_Author_ID
 {
     char id[15];
     int index;
 
-    PI_Auther_ID()
+    PI_Author_ID()
     {
     }
 
-    PI_Auther_ID(char id[], int index)
+    PI_Author_ID(char id[], int index)
     {
         for (int i = 0; i < 15; i++)
         {
@@ -99,54 +99,87 @@ struct PI_ISBN
     }
 };
 
-struct SI_Auther_ID_Header
+struct SI_Author_ID_Header
 {
     int no_of_records;
 
-    SI_Auther_ID_Header()
+    SI_Author_ID_Header()
     {
     }
 
-    SI_Auther_ID_Header(int no)
+    SI_Author_ID_Header(int no)
     {
         no_of_records = no;
     }
 };
 
-struct SI_Auther_ID
+struct SI_Author_ID
 {
-    char id[15];
+    char author_id[15];
     int index;
 
-    SI_Auther_ID()
+    SI_Author_ID()
     {
     }
 
-    SI_Auther_ID(char id[], int index)
+    SI_Author_ID(char auther_id[], int index)
     {
         for (int i = 0; i < 15; i++)
         {
-            this->id[i] = id[i];
+            this->author_id[i] = auther_id[i];
         }
         this->index = index;
     }
-};
 
-struct SI_Auther_Name
-{
-};
-
-struct AutherHeader
-{
-    int no_of_records;
-
-    AutherHeader()
+    bool operator==(SI_Author_ID si)
     {
+        if ((string)this->author_id == (string)si.author_id && this->index == si.index)
+        {
+            return true;
+        }
+        return false;
     }
 
-    AutherHeader(int no)
+    bool operator<(SI_Author_ID si)
+    {
+        if ((string)this->author_id < (string)si.author_id)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    bool operator>(SI_Author_ID si)
+    {
+        if ((string)this->author_id > (string)si.author_id)
+        {
+            return true;
+        }
+        return false;
+    }
+
+};
+
+struct SI_Author_Name
+{
+};
+
+struct AuthorHeader
+{
+    int no_of_records;
+    int RNN ;
+
+    AuthorHeader()
+    {
+        this->no_of_records = 0;
+        this->RNN = -1;
+    }
+
+    AuthorHeader(int no , int rnn)
     {
         no_of_records = no;
+        this->RNN = rnn;
+
     }
 };
 
@@ -260,37 +293,37 @@ struct Book
 
 list<Book> bookList;
 list<Author> authorList;
-list<PI_Auther_ID> PI_Author_ID_List;
+list<PI_Author_ID> PI_Author_ID_List;
 list<PI_ISBN> PI_ISBN_List;
-list<SI_Auther_ID> SI_Author_ID_List;
-list<SI_Auther_Name> SI_Author_name_List;
+list<SI_Author_ID> SI_Author_ID_List;
+list<SI_Author_Name> SI_Author_name_List;
 
 fstream books_file, authors_file, pi_author_id_file, pi_isbn_file, si_author_id_file, si_author_name_file;
 
 template <class T1, class T2>
-void fillList(fstream &file, list<T1> &List, T2& h)
+void fillList(fstream &file, list<T1> &List, T2& header)
 {
     file.seekg(0, ios::beg);
-    file.read((char *)&h, sizeof(h));
-    for (int i = 0; i < h.no_of_records; i++)
+    file.read((char *)&header, sizeof(header));
+    for (int i = 0; i < header.no_of_records; i++)
     {
-        T1 b;
-        file.seekg(sizeof(h) + (i * sizeof(b)), ios::beg);
-        file.read((char *)&b, sizeof(b));
-        List.push_back(b);
+        T1 record;
+        file.seekg(sizeof(header) + (i * sizeof(record)), ios::beg);
+        file.read((char *)&record, sizeof(record));
+        List.push_back(record);
     }
 }
 
 template <class T1, class T2>
-void writeFile(fstream &file, list<T1> &List, T2 &h)
+void writeFile(fstream &file, list<T1> &List, T2 &header)
 {
     file.seekg(0, ios::beg);
-    file.read((char *)&h, sizeof(h));
+    file.read((char *)&header, sizeof(header));
     int counter = 0;
-    for (auto i : List)
+    for (auto record : List)
     {
-        file.seekp(sizeof(h) + (counter * sizeof(i)), ios::beg);
-        file.write((char *)&i, sizeof(i));
+        file.seekp(sizeof(header) + (counter * sizeof(record)), ios::beg);
+        file.write((char *)&record, sizeof(record));
         counter++;
     }
 }
@@ -336,12 +369,24 @@ bool isISBNExist(list<PI_ISBN> list, string isbn)
     return false;
 }
 
+template <class T1, class T2>
+void writeAtFile(fstream &file, T1& record, T2 &header , int position)
+{
+    file.seekg(0, ios::beg);
+    file.read((char *)&header, sizeof(header));
+    file.seekp(sizeof(header) + (position * sizeof(record)), ios::beg);
+    file.write((char *)&record, sizeof(record));
+}
+
+
 void addBook()
 {
-    bookHeader bh;
+    bookHeader book_h;
     PI_ISBN_Header pi_isbn_h;
-    fillList(books_file, bookList, bh);
+    SI_Author_ID_Header si_author_id_h;
+    fillList(books_file,bookList,book_h);
     fillList(pi_isbn_file, PI_ISBN_List, pi_isbn_h);
+    fillList(si_author_id_file,SI_Author_ID_List,si_author_id_h);
     char isbn[15], title[30], auther_id[15];
     cout << "enter book's isbn: ";
     cin.getline(isbn,15);
@@ -349,8 +394,8 @@ void addBook()
     cin.getline(title,30);
     cout << "enter book's auther id: ";
     cin.getline(auther_id,15);
-    Book b(isbn, title,auther_id);
-    if (isRecordExist(bookList, b))
+    Book book(isbn, title,auther_id);
+    if (isRecordExist(bookList, book))
     {
         return;
     }
@@ -359,62 +404,66 @@ void addBook()
         cout << "Error ISBN is aready exist" << endl;
         return;
     }
-    PI_ISBN pi_isbn(isbn, bh.no_of_records);
-    bh.no_of_records++;
-    pi_isbn_h.no_of_records++;
-    bookList.push_back(b);
-    PI_ISBN_List.push_back(pi_isbn);
-    PI_ISBN_List.sort();
-    addHeader(books_file, bh);
-    addHeader(pi_isbn_file, pi_isbn_h);
-    writeFile(books_file, bookList, bh);
-    writeFile(pi_isbn_file, PI_ISBN_List, pi_isbn_h);
+    if(book_h.RNN == -1){
+        int end = book_h.no_of_records ;
+        PI_ISBN pi_isbn(isbn, end);
+        SI_Author_ID si_author_id(auther_id,end);
+        book_h.no_of_records++;
+        pi_isbn_h.no_of_records++;
+        si_author_id_h.no_of_records++;
+
+        PI_ISBN_List.push_back(pi_isbn);
+        SI_Author_ID_List.push_back(si_author_id);
+        PI_ISBN_List.sort();
+        SI_Author_ID_List.sort();
+
+        addHeader(books_file, book_h);
+        addHeader(pi_isbn_file, pi_isbn_h);
+        addHeader(si_author_id_file,si_author_id_h);
+
+        writeAtFile(books_file,book,book_h,end);
+        writeFile(pi_isbn_file,PI_ISBN_List,pi_isbn_h);
+        writeFile(si_author_id_file,SI_Author_ID_List,si_author_id_h);
+
+    }
+    else{
+
+    }
+    
+    
     bookList.clear();
     PI_ISBN_List.clear();
+    SI_Author_ID_List.clear();
 }
 
-void add(fstream &file, Author auther)
-{
-    file.write((char *)&auther, sizeof(auther));
-}
 
-void fillList(fstream &file, list<Book> &List)
-{
-    bookHeader h ;
-    file.seekg(0, ios::beg);
-    file.read((char *)&h, sizeof(h));
-    for (int i = 0; i < h.no_of_records; i++)
-    {
-        Book b;
-        file.seekg(sizeof(h) + (i * sizeof(b)), ios::beg);
-        file.read((char *)&b, sizeof(b));
-        List.push_back(b);
-    }
-}
 
 int main()
 {
 
     books_file.open("books.txt", ios::in | ios::out | ios::binary);
-    authors_file.open("authers.txt", ios::in | ios::out | ios::binary);
-    pi_author_id_file.open("PI_Auther_ID.txt", ios::in | ios::out | ios::binary);
+    authors_file.open("authors.txt", ios::in | ios::out | ios::binary);
+    pi_author_id_file.open("PI_Author_ID.txt", ios::in | ios::out | ios::binary);
     pi_isbn_file.open("PI_ISBN.txt", ios::in | ios::out | ios::binary);
-    si_author_id_file.open("SI_Auther_ID.txt", ios::in | ios::out | ios::binary);
-    si_author_name_file.open("SI_Auther_Name.txt", ios::in | ios::out | ios::binary);
+    si_author_id_file.open("SI_Author_ID.txt", ios::in | ios::out | ios::binary);
+    si_author_name_file.open("SI_Author_Name.txt", ios::in | ios::out | ios::binary);
 
-    bookHeader h(0, -1);
+    bookHeader book_h(0, -1);
     PI_ISBN_Header pi_isbn_h(0);
-    addHeader(books_file, h);
-    addHeader(pi_isbn_file, pi_isbn_h);
-    PI_ISBN pi((char *)"1234",1);
+    SI_Author_ID_Header si_author_id_h(0);
+    AuthorHeader author_h(0,-1);
 
-    pi_isbn_file.seekp(sizeof(pi_isbn_h),ios::beg);
-    pi_isbn_file.write((char *)&pi,sizeof(pi));
+    addHeader(books_file, book_h);
+    addHeader(pi_isbn_file, pi_isbn_h);
+    addHeader(si_author_id_file,si_author_id_h);
+    
+
 
     addBook();
     
-    fillList(books_file,bookList,h);
+    fillList(books_file,bookList,book_h);
     fillList(pi_isbn_file,PI_ISBN_List,pi_isbn_h);
+    fillList(si_author_id_file,SI_Author_ID_List,si_author_id_h);
 
     for(Book i : bookList){
         cout << i.isbn << " " << i.title << " " << i.author_id << endl  ;
@@ -424,13 +473,19 @@ int main()
         cout << i.isbn << " " << i.index << endl  ;
     }
 
+    for(SI_Author_ID i : SI_Author_ID_List){
+        cout << i.author_id<< " " << i.index << endl  ;
+    }
+
     bookList.clear();
     PI_ISBN_List.clear();
+    SI_Author_ID_List.clear();
 
     addBook();
 
-    fillList(books_file,bookList,h);
+    fillList(books_file,bookList,book_h);
     fillList(pi_isbn_file,PI_ISBN_List,pi_isbn_h);
+    fillList(si_author_id_file,SI_Author_ID_List,si_author_id_h);
 
     for(Book i : bookList){
         cout << i.isbn << " " << i.title << " " << i.author_id << endl  ;
@@ -440,8 +495,13 @@ int main()
         cout << i.isbn << " " << i.index << endl  ;
     }
 
+    for(SI_Author_ID i : SI_Author_ID_List){
+        cout << i.author_id<< " " << i.index << endl  ;
+    }
+
     bookList.clear();
     PI_ISBN_List.clear();
+    SI_Author_ID_List.clear();
 
 
 }
