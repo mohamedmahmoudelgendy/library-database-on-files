@@ -328,14 +328,21 @@ void writeFile(fstream &file, list<T1> &List, T2 &header)
     }
 }
 
-template <class T>
-bool isRecordExist(list<T> list, T record)
+
+template <class T1 ,class T2>
+bool isRecordExist(fstream& file,T1 record ,T2& header)
 {
-    for (T i : list)
+    file.seekg(0, ios::end);
+    long stop = file.tellg(); 
+    file.seekg(0, ios::beg);
+    file.read((char *)&header, sizeof(header));
+    for (int i = 0; file.tellg() != stop ; i++)
     {
-        if (i == record)
-        {
-            return true;
+        T1 re;
+        file.seekg(sizeof(header) + (i * sizeof(re)), ios::beg);
+        file.read((char *)&re, sizeof(re));
+        if(re == record){
+            return true ;
         }
     }
     return false;
@@ -383,7 +390,7 @@ void getRecordfromFile(fstream &file, T1& record, T2 &header , int position)
 {
     file.seekg(0, ios::beg);
     file.read((char *)&header, sizeof(header));
-    file.seekd(sizeof(header) + (position * sizeof(record)), ios::beg);
+    file.seekg(sizeof(header) + (position * sizeof(record)), ios::beg);
     file.read((char *)&record, sizeof(record));
 }
 
@@ -393,7 +400,7 @@ void addBook()
     bookHeader book_h;
     PI_ISBN_Header pi_isbn_h;
     SI_Author_ID_Header si_author_id_h;
-    fillList(books_file,bookList,book_h);
+    getHeader(books_file,book_h);
     fillList(pi_isbn_file, PI_ISBN_List, pi_isbn_h);
     fillList(si_author_id_file,SI_Author_ID_List,si_author_id_h);
     char isbn[15], title[30], auther_id[15];
@@ -404,11 +411,11 @@ void addBook()
     cout << "enter book's auther id: ";
     cin.getline(auther_id,15);
     Book book(isbn, title,auther_id);
-    if (isRecordExist(bookList, book))
+    if (isRecordExist(books_file,book,book_h))// didn't work
     {
         return;
     }
-    if (isISBNExist(PI_ISBN_List, isbn))
+    if (isISBNExist(PI_ISBN_List, isbn))// didn't work
     {
         cout << "Error ISBN is aready exist" << endl;
         return;
@@ -465,8 +472,6 @@ void addBook()
 
     }
     
-    
-    bookList.clear();
     PI_ISBN_List.clear();
     SI_Author_ID_List.clear();
 }
@@ -491,7 +496,6 @@ int main()
     addHeader(books_file, book_h);
     addHeader(pi_isbn_file, pi_isbn_h);
     addHeader(si_author_id_file,si_author_id_h);
-    
 
     addBook();
     
@@ -511,7 +515,6 @@ int main()
         cout << i.author_id<< " " << i.index << endl  ;
     }
 
-    bookList.clear();
     PI_ISBN_List.clear();
     SI_Author_ID_List.clear();
 
@@ -533,7 +536,6 @@ int main()
         cout << i.author_id<< " " << i.index << endl  ;
     }
 
-    bookList.clear();
     PI_ISBN_List.clear();
     SI_Author_ID_List.clear();
 
